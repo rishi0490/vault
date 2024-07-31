@@ -69,3 +69,133 @@ metrics:
     namespace: monitoring
     additionalLabels:
       release: prometheus-operator
+
+
+
+vault auth enable kubernetes
+vault write auth/kubernetes/config \
+  token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+  kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443" \
+  kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+
+
+vault policy write example-policy - <<EOF
+path "secret/data/*" {
+  capabilities = ["read"]
+}
+EOF
+
+
+# example-policy.hcl
+
+path "secret/data/*" {
+  capabilities = ["read"]
+}
+
+path "auth/*" {
+  capabilities = ["deny"]
+}
+
+
+vault policy write example-policy example-policy.hcl
+vault token create -policy="example-policy"
+
+
+vault audit enable file file_path=/vault/logs/audit.log
+
+
+vault operator raft snapshot save /path/to/snapshot
+
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-backup
+spec:
+  schedule: "0 */6 * * *"  # Every 6 hours
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: vault-backup
+            image: vault:latest
+            command: ["vault", "operator", "raft", "snapshot", "save", "/path/to/snapshot"]
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /path/to/snapshot
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: backup-pvc
+
+
+vault operator raft snapshot restore /path/to/snapshot
+
+
+in values.yaml
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    additionalLabels:
+      release: prometheus-operator
+
+
+storage "raft" {
+  path    = "/vault/data"
+}
+
+
+import subprocess
+import json
+
+def parse_netstat_output(output):
+    lines = output.split('\n')
+    data = []
+    headers = []
+
+    for line in lines:
+        if 'Proto' in line:
+            headers = line.split()
+        elif headers:
+            values = line.split()
+            if len(values) == len(headers):
+                entry = {headers[i]: values[i] for i in range(len(headers))}
+                data.append(entry)
+    
+    return data
+
+def netstat_to_json():
+    try:
+        # Run netstat command
+        result = subprocess.run(['netstat', '-tuln'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if result.returncode != 0:
+            print(f"Error running netstat: {result.stderr}")
+            return
+
+        # Parse netstat output
+        netstat_output = result.stdout
+        parsed_data = parse_netstat_output(netstat_output)
+
+        # Convert to JSON
+        json_data = json.dumps(parsed_data, indent=4)
+        return json_data
+
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+
+# Run the function and print the JSON output
+if __name__ == "__main__":
+    netstat_json = netstat_to_json()
+    if netstat_json:
+        print(netstat_json)
+
+
+
+result = subprocess.run(['netstat', '-tuln'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+
+
