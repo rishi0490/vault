@@ -1,0 +1,71 @@
+# values.yaml
+
+global:
+  enabled: true
+  tlsDisable: false
+
+server:
+  ha:
+    enabled: true
+  affinity: ""
+  nodeSelector: {}
+  tolerations: []
+  extraArgs: []
+  config: |
+    ui = true
+
+    listener "tcp" {
+      address = "0.0.0.0:8200"
+      cluster_address = "0.0.0.0:8201"
+      tls_cert_file = "/vault/userconfig/tls/tls.crt"
+      tls_key_file  = "/vault/userconfig/tls/tls.key"
+    }
+
+    storage "consul" {
+      address = "consul-server:8500"
+      path    = "vault/"
+    }
+
+    service_registration "kubernetes" {}
+
+  # Configure storage backend
+  storage:
+    consul:
+      address: "consul-server:8500"
+      path: "vault/"
+      scheme: "http"
+
+  # TLS Configuration
+  extraVolumes:
+    - type: secret
+      name: tls
+      path: /vault/userconfig/tls
+
+  extraVolumeMounts:
+    - name: tls
+      mountPath: /vault/userconfig/tls
+      readOnly: true
+
+# Kubernetes Authentication Configuration
+injector:
+  enabled: true
+  authPath: "auth/kubernetes"
+  defaultVaultAddress: "http://vault:8200"
+  agentImage:
+    repository: "hashicorp/vault-k8s"
+    tag: "latest"
+
+# Audit logging configuration
+audit:
+  file:
+    file_path: "/vault/logs/vault_audit.log"
+    log_raw: true
+
+# Monitoring and Alerting
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    additionalLabels:
+      release: prometheus-operator
