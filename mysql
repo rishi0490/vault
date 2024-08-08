@@ -1,0 +1,35 @@
+after login in database
+
+CREATE DATABASE vault;
+CREATE USER 'vault'@'%' IDENTIFIED BY 'vaultpassword';
+GRANT ALL PRIVILEGES ON vault.* TO 'vault'@'%';
+FLUSH PRIVILEGES;
+
+
+USE vault;
+
+CREATE TABLE vault_kv_store (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    key_name VARCHAR(255) NOT NULL,
+    value TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+INSERT INTO vault_kv_store (key_name, value) VALUES ('example_key_1', 'example_value_1');
+INSERT INTO vault_kv_store (key_name, value) VALUES ('example_key_2', 'example_value_2');
+
+
+SHOW DATABASES;
+
+
+USE vault;
+SHOW TABLES;
+
+
+DESCRIBE vault_kv_store;
+
+
+SELECT * FROM vault_kv_store;
+
+
