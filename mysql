@@ -33,3 +33,25 @@ DESCRIBE vault_kv_store;
 SELECT * FROM vault_kv_store;
 
 
+
+show DATABASES;
+
+USE mysql;
+SELECT User, Host, authentication_string AS Password FROM user;
+
+
+USE my_database;
+SHOW TABLES;
+
+
+SELECT username, password FROM users;  -- Replace 'users' with the actual table name
+
+
+USE vault;
+SHOW TABLES;
+
+-- Assuming there is a users table
+SELECT username, password FROM users;  -- Adjust the table and column names as necessary
+
+
+
