@@ -1,0 +1,5 @@
+helm install traefik traefik/traefik \
+  --namespace vault --create-namespace \
+  --set-string "globalArguments[0]=--providers.kubernetesIngress.ingressClass=traefik" \
+  --set service.type=LoadBalancer \
+  --set service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-internal"="0.0.0.0/0"
