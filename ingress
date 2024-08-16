@@ -1,7 +1,60 @@
 helm install traefik traefik/traefik \
   --namespace vault --create-namespace \
   --set-string "globalArguments[0]=--providers.kubernetesIngress.ingressClass=traefik" \
-  --set service.type=LoadBalancer \
-  --set service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-internal"="true"
+  --set service.type=LoadBalancer
+
+Manual edit this svc
+
+ annotations:
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
 
 
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: vault-ui-ipwhitelist
+  namespace: vault
+spec:
+  ipAllowList:
+    sourceRange:
+      - 127.0.0.1/32
+      - 172.20.28.42
+      - 192.168.31.196
+
+
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vault-ui-ingress
+  namespace: vault
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.middlewares: "vault-vault-ui-ipwhitelist@kubernetescrd"
+spec:
+  rules:
+    - host: vault-ui.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vault-ui
+                port:
+                  number: 8200
+          - path: /ui
+            pathType: Prefix
+            backend:
+              service:
+                name: vault-ui
+                port:
+                  number: 8200
+
+
+
+sudo kubectl port-forward -n vault svc/traefik 80:80
+Password:
+Forwarding from 127.0.0.1:80 -> 8000
+Forwarding from [::1]:80 -> 8000
+Handling connection for 80
