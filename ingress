@@ -58,3 +58,35 @@ Password:
 Forwarding from 127.0.0.1:80 -> 8000
 Forwarding from [::1]:80 -> 8000
 Handling connection for 80
+
+
+Run without sudo inside a screen or tmux session:
+
+If the problem persists, it's often easier to avoid nohup and run the command inside a screen or tmux session:
+
+Start a screen session:
+
+bash
+Copy code
+screen -S port-forward
+Run the kubectl port-forward command without nohup:
+
+bash
+Copy code
+sudo kubectl port-forward -n vault svc/traefik 80:80
+Detach from the screen session with Ctrl+A then D.
+
+You can later reattach with:
+
+bash
+Copy code
+screen -r port-forward
+These approaches should prevent the command from being suspended and allow it to run as expected in the background.
+
+
+i using screnn -S port-forward
+then for detach mode press control+a
+and then d
+
+now got deatch mode
+
