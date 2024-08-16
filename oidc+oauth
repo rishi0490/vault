@@ -1,0 +1,17 @@
+vault auth enable oidc
+
+
+vault write auth/oidc/config \
+    oidc_discovery_url="https://accounts.google.com" \
+    oidc_client_id="<YOUR_GOOGLE_CLIENT_ID>" \
+    oidc_client_secret="<YOUR_GOOGLE_CLIENT_SECRET>" \
+    default_role="default"
+
+
+vault write auth/oidc/role/default \
+    allowed_redirect_uris="https://vault-ui.local" \
+    user_claim="sub" \
+    oidc_scopes="profile email" \
+    bound_audiences="acytfBJtkyeSrVmuvjhdgrstrrttanRhSWb" \
+    policies="default" \
+    ttl="1h"
