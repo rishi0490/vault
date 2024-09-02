@@ -1,0 +1,179 @@
+To centralize your Vault audit logs and make them available in Grafana using Promtail, you can follow these steps. Since you already have PVCs bound to each Vault pod, you can use one of these existing PVCs or create a new one to store your audit logs.
+
+Step 1: Decide on Storage Location
+Given your existing setup, you can either:
+
+Use one of the existing PVCs (e.g., data-vault-1).
+Create a new PVC specifically for the audit logs.
+For simplicity, let's assume you want to create a new PVC for the audit logs.
+
+Step 2: Create a PersistentVolume and PersistentVolumeClaim (If Needed)
+If you decide to use a new PVC, follow these steps. If you want to use an existing PVC, skip to Step 3.
+
+Create a New PersistentVolume
+yaml
+Copy code
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vault-audit-logs-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:  # Example using NFS, modify if using a different storage system
+    path: /exported/path/for/vault/audit-logs
+    server: nfs-server.example.com
+Create a New PersistentVolumeClaim
+yaml
+Copy code
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vault-audit-logs-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+Apply these configurations:
+
+bash
+Copy code
+kubectl apply -f vault-audit-logs-pv.yaml
+kubectl apply -f vault-audit-logs-pvc.yaml
+Step 3: Update Vault Deployment to Use the PVC
+You need to update your Vault StatefulSet (or Deployment) to write audit logs to the shared storage.
+
+Modify Vault Configuration
+Update the Vault configuration to write audit logs to the desired path within the shared volume. If you have access to the Vault configuration, add or update the audit device configuration:
+
+hcl
+Copy code
+audit "file" {
+  file_path = "/vault/logs/vault_audit.log"
+  log_raw = true
+}
+Modify the Vault StatefulSet to Mount the PVC
+Update your StatefulSet to mount the vault-audit-logs-pvc (or the PVC you selected/created):
+
+yaml
+Copy code
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vault
+  namespace: vault
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: vault
+  template:
+    metadata:
+      labels:
+        app: vault
+    spec:
+      containers:
+      - name: vault
+        image: vault:latest
+        volumeMounts:
+        - name: vault-audit-logs
+          mountPath: /vault/logs
+        # Vault container configuration here
+      volumes:
+      - name: vault-audit-logs
+        persistentVolumeClaim:
+          claimName: vault-audit-logs-pvc
+Apply the updated StatefulSet:
+
+bash
+Copy code
+kubectl apply -f vault-statefulset.yaml
+Step 4: Update Promtail DaemonSet to Access Audit Logs
+Modify your Promtail DaemonSet to mount the same PVC and configure it to read the audit logs.
+
+Modify the Promtail DaemonSet
+yaml
+Copy code
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: promtail
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: promtail
+  template:
+    metadata:
+      labels:
+        app: promtail
+    spec:
+      containers:
+      - name: promtail
+        image: grafana/promtail:3.0.0
+        volumeMounts:
+        - name: vault-audit-logs
+          mountPath: /vault/logs
+        # Promtail container configuration here
+      volumes:
+      - name: vault-audit-logs
+        persistentVolumeClaim:
+          claimName: vault-audit-logs-pvc
+Apply the updated DaemonSet:
+
+bash
+Copy code
+kubectl apply -f promtail-daemonset.yaml
+Step 5: Configure Promtail to Send Logs to Loki
+You’ll need to configure Promtail to scrape logs from the /vault/logs/vault_audit.log file and send them to Loki.
+
+Example Promtail configuration (promtail-config.yaml):
+
+yaml
+Copy code
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9095
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: vault-audit-logs
+    static_configs:
+    - targets:
+        - localhost
+      labels:
+        job: vault-audit
+        __path__: /vault/logs/vault_audit.log
+Ensure this configuration is applied to Promtail. If you are using a ConfigMap for Promtail configuration, update it and then redeploy Promtail.
+
+Step 6: View Logs in Grafana
+After Promtail starts sending logs to Loki, you can visualize the Vault audit logs in Grafana.
+
+Add Loki as a data source in Grafana:
+
+Go to Configuration > Data Sources in Grafana.
+Add Loki as a new data source and point it to your Loki instance.
+Create a Dashboard:
+
+Create a new dashboard in Grafana and add a panel that queries the Vault audit logs from Loki.
+Example query:
+
+logql
+Copy code
+{job="vault-audit"}
+Summary
+Create or use an existing PVC to store audit logs.
+Update Vault StatefulSet to mount the PVC and configure Vault to write logs to it.
+Update Promtail DaemonSet to mount the same PVC and configure it to scrape the audit logs.
+Configure Promtail to send logs to Loki.
+View the logs in Grafana using a dashboard that queries Loki.
+This setup will centralize your Vault audit logs and make them accessible in Grafana through Loki.
