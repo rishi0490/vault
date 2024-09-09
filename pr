@@ -1,0 +1,19 @@
+# Clone the repository
+git clone https://github.com/your-org/your-repo.git
+cd your-repo
+
+# Checkout the develop branch
+git checkout develop
+git pull origin develop
+
+# Create a new branch
+git checkout -b feature/my-new-feature
+
+# Make your changes, then add and commit them
+git add .
+git commit -m "Implemented a new feature"
+
+# Push the new branch to the remote
+git push origin feature/my-new-feature
+
+# Go to GitHub/your Git hosting platform to raise the PR
