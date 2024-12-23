@@ -15,3 +15,38 @@ vault write auth/oidc/role/default \
     bound_audiences="acytfBJtkyeSrVmuvjhdgrstrrttanRhSWb" \
     policies="default" \
     ttl="1h"
+
+
+
+above is not correct
+
+vault read auth/oidc/role/gmail
+Key                        Value
+---                        -----
+allowed_redirect_uris      [https://staging-vault-ui.leena.ai/ui/vault/auth/oidc/oidc/callback]
+bound_audiences            [29516888822-dabbqt514a7eom.apps.googleusercontent.com]
+bound_claims               map[email:[rishi.singh@leena.ai arpit.nigam@leena.ai]]
+bound_claims_type          string
+bound_subject              n/a
+claim_mappings             <nil>
+clock_skew_leeway          0
+expiration_leeway          0
+groups_claim               n/a
+max_age                    0
+not_before_leeway          0
+oidc_scopes                [openid email profile]
+policies                   [reader]
+role_type                  oidc
+token_bound_cidrs          []
+token_explicit_max_ttl     0s
+token_max_ttl              0s
+token_no_default_policy    false
+token_num_uses             0
+token_period               0s
+token_policies             [reader]
+token_ttl                  1h
+token_type                 default
+ttl                        1h
+user_claim                 email
+user_claim_json_pointer    false
+verbose_oidc_logging       false
